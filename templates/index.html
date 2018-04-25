@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script src="{{url_for('static', filename='jquery.js')}}"></script>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        font-family: "微软雅黑";
+    }
+
+    .title {
+        font-size: 20px;
+        text-align: center;
+        padding: 20px 0;
+    }
+
+    .main {
+        width: 80%;
+        margin: 0 auto;
+        overflow: hidden;
+    }
+
+    #file {
+        display: none;
+    }
+
+    .choose {
+        margin: 20px 0;
+    }
+
+    .button {
+        width: 80px;
+        height: 30px;
+        line-height: 30px;
+        border: 1px solid #d3d3d3;
+        background: #eee;
+        color: #666;
+        text-align: center;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .all_image {
+        float: left;
+        display: inline-block;
+        width: 40%;
+        height: 615px;
+    }
+
+    /*		.all_image img{
+                width: 100%;
+            }*/
+    .test {
+        display: inline-block;
+    }
+
+    .test_wrap {
+        width: 20%;
+        text-align: center;
+        margin-top: 13%;
+    }
+</style>
+<body>
+<div class="title">微生物识别检测</div>
+<div class="main">
+    <form action="/test" method="post" enctype="multipart/form-data">
+        <div class="button choose" onclick="document.getElementById('file').click()">选择文件</div>
+        <input type="file" name='file' onchange="selectImage(this)" id="file" accept="image/*"/>
+    </form>
+
+    <div class="left_image all_image" id="left_image"></div>
+    <div class="all_image test_wrap"><span class="test button">检测</span></div>
+    <div class="right_image all_image">
+        <img src="" id="new_image"/>
+    </div>
+    <h1 id="result"></h1>
+</div>
+</body>
+<script>
+    function selectImage(file) {
+        $("#new_image").removeAttr("src");
+        $("#result").html("");
+        $("#left_image").find("img").remove();
+        if (!file.files || !file.files[0]) {
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (evt) {
+            var image = new Image();
+            image.src = evt.target.result;
+            image.id = "img";
+            document.getElementById("left_image").appendChild(image);
+            image.addEventListener("load", function () {
+                var width = document.getElementById("img").width;
+                var height = document.getElementById("img").height;
+                if (width > height) {
+                    image.style.width = "100%";
+                } else if (width < height) {
+                    image.style.height = "615px";
+                }
+            });
+        };
+        reader.readAsDataURL(file.files[0]);
+    }
+
+
+    $(".test_wrap").click(function () {
+        var formData = new FormData();
+        formData.append('file', $('#file')[0].files[0]);
+
+        $.ajax({
+            url: "test",
+            type: "POST",
+            processData: false,
+            contentType: false,
+            data: formData,
+            success: function (data) {
+                result = data.result;
+                var ulELe = $("<ul></ul>");
+                $.each(result, function (idx, obj) {
+                    var liEle = $("<li></li>").append(obj.class_name + ":" + obj.scores.toFixed(2)+"%");
+                    liEle.appendTo(ulELe)
+                });
+                ulELe.appendTo($("#result"));
+                $("#new_image").attr("src", data.path);
+                var oldImage = document.getElementById("img");
+                var newImage = document.getElementById("new_image");
+                newImage.style.width = oldImage.width + "px";
+                newImage.style.height = oldImage.height + "px";
+
+
+            }
+        })
+    });
+
+
+</script>
+</html>
