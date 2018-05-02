@@ -2,12 +2,13 @@
 # matplotlib.use('Agg')
 import numpy as np
 import os
+import sys
 import tensorflow as tf
 
 from PIL import Image
 
 # This is needed since the notebook is stored in the object_detection folder.
-# sys.path.append("..")
+sys.path.append("..")
 from object_detection.utils import ops as utils_ops
 
 from object_detection.utils import label_map_util
@@ -104,7 +105,6 @@ def run_inference_for_single_image(image, graph):
                                    feed_dict={
                                        image_tensor: np.expand_dims(image, 0)})
 
-            # all outputs are float32 numpy arrays, so convert types as appropriate
             output_dict['num_detections'] = int(
                 output_dict['num_detections'][0])
             output_dict['detection_classes'] = output_dict[
@@ -139,17 +139,35 @@ def run_inference_for_single_image(image, graph):
 #         line_thickness=1)
 
 
-def detection_micro(image_path):
-    image = Image.open(image_path)
-    image_np = load_image_into_numpy_array(image)
-    output_dict = run_inference_for_single_image(image_np, detection_graph)
-    _,result_list = vis_util.visualize_boxes_and_labels_on_image_array(
-        image_np,
-        output_dict['detection_boxes'],
-        output_dict['detection_classes'],
-        output_dict['detection_scores'],
-        category_index,
-        instance_masks=output_dict.get('detection_masks'),
-        use_normalized_coordinates=True,
-        line_thickness=1)
-    return image_np,result_list
+def detection_micro(image_paths):
+    result_list = []
+    for image_path in image_paths:
+        path = "static/result_img/" + image_path.filename
+        result_dict = {}
+        image = Image.open(image_path)
+        image_np = load_image_into_numpy_array(image)
+        output_dict = run_inference_for_single_image(image_np, detection_graph)
+
+        _, probabilities = vis_util.visualize_boxes_and_labels_on_image_array(
+            image_np,
+            output_dict['detection_boxes'],
+            output_dict['detection_classes'],
+            output_dict['detection_scores'],
+            category_index,
+            instance_masks=output_dict.get('detection_masks'),
+            use_normalized_coordinates=True,
+            line_thickness=1)
+        im = Image.fromarray(image_np)
+        im.save(path)
+        result_dict["path"] = path
+        result_dict["probabilities"] = probabilities
+        result_list.append(result_dict)
+    return result_list
+
+#
+# if __name__ == '__main__':
+#     image_np, result_list = detection_micro(
+#         "E:/北控水务/图像标注软件培训/镜检图片_标注/镜检图"
+#         "片/镜检图片_镜检照片_东部大区专家系统资料_2建工环"
+#         "境_北区厂_20180305草履虫一期.jpg")
+#     print(result_list)

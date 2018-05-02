@@ -14,13 +14,10 @@ def index():
 
 @app.route('/test', methods=['POST'])
 def detection():
-    file = request.files.get("file")
-    path = "static/result_img/" + file.filename
-    image, result = detection_micro(file)
+    files = request.files.getlist("file")
+    result = detection_micro(files)
     print(result)
-    im = Image.fromarray(image)
-    im.save(path)
-    return jsonify({"path": path, "result": result})
+    return jsonify(result)
 
 
 if __name__ == '__main__':

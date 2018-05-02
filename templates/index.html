@@ -21,7 +21,7 @@
     .main {
         width: 80%;
         margin: 0 auto;
-        overflow: hidden;
+        /*overflow: hidden;*/
     }
 
     #file {
@@ -52,9 +52,6 @@
         height: 615px;
     }
 
-    /*		.all_image img{
-                width: 100%;
-            }*/
     .test {
         display: inline-block;
     }
@@ -64,54 +61,73 @@
         text-align: center;
         margin-top: 13%;
     }
+
+    #left_image img, #right_image img {
+        max-width: 600px;
+        max-height: 600px;
+    }
+
+    #left_image img {
+        margin-bottom: 30px;
+    }
+
+    #right_image img {
+        display: block;
+        margin: 0 auto;
+    }
+
+    #right_image span {
+        text-align: center;
+        display: block;
+        margin-bottom: 20px;
+    }
 </style>
 <body>
 <div class="title">微生物识别检测</div>
 <div class="main">
-    <form action="/test" method="post" enctype="multipart/form-data">
-        <div class="button choose" onclick="document.getElementById('file').click()">选择文件</div>
-        <input type="file" name='file' onchange="selectImage(this)" id="file" accept="image/*"/>
-    </form>
-
+    <div class="button choose" onclick="document.getElementById('file').click()">选择文件</div>
+    <input type="file" onchange="selectImage(this)" id="file" accept="image/*" name="file" multiple="multiple"/>
     <div class="left_image all_image" id="left_image"></div>
     <div class="all_image test_wrap"><span class="test button">检测</span></div>
-    <div class="right_image all_image">
-        <img src="" id="new_image"/>
+    <div class="right_image all_image" id="right_image">
+        <!--<img src="1.jpg" id="new_image"/>-->
     </div>
-    <h1 id="result"></h1>
 </div>
 </body>
 <script>
     function selectImage(file) {
-        $("#new_image").removeAttr("src");
-        $("#result").html("");
         $("#left_image").find("img").remove();
-        if (!file.files || !file.files[0]) {
+        $("#right_image").find("img").remove();
+        if (!file.files) {
             return;
         }
-        var reader = new FileReader();
-        reader.onload = function (evt) {
-            var image = new Image();
-            image.src = evt.target.result;
-            image.id = "img";
-            document.getElementById("left_image").appendChild(image);
-            image.addEventListener("load", function () {
-                var width = document.getElementById("img").width;
-                var height = document.getElementById("img").height;
-                if (width > height) {
-                    image.style.width = "100%";
-                } else if (width < height) {
-                    image.style.height = "615px";
-                }
-            });
-        };
-        reader.readAsDataURL(file.files[0]);
+        for (var i = 0; i < file.files.length; i++) {
+            var reader = new FileReader();
+            reader.onload = function (evt) {
+                var image = new Image();
+                image.src = evt.target.result;
+                document.getElementById("left_image").appendChild(image);
+                image.addEventListener("load", function () {
+                });
+            };
+            reader.readAsDataURL(file.files[i]);
+        }
     }
 
 
     $(".test_wrap").click(function () {
         var formData = new FormData();
-        formData.append('file', $('#file')[0].files[0]);
+        // formData.append('file', $('#file')[0].files[0]);
+        // formData.append('file', $('#file')[0]);
+        // for (i = 0; i < $('#file').files.length; i++) {
+        //
+        //     formData.append('file[]', this.files[i]);
+        // }
+
+        for (var i = 0; i < $('#file')[0].files.length; i++) {
+            formData.append('file', $('#file')[0].files[i]);
+        }
+
 
         $.ajax({
             url: "test",
@@ -120,18 +136,30 @@
             contentType: false,
             data: formData,
             success: function (data) {
-                result = data.result;
-                var ulELe = $("<ul></ul>");
-                $.each(result, function (idx, obj) {
-                    var liEle = $("<li></li>").append(obj.class_name + ":" + obj.scores.toFixed(2)+"%");
-                    liEle.appendTo(ulELe)
-                });
-                ulELe.appendTo($("#result"));
-                $("#new_image").attr("src", data.path);
-                var oldImage = document.getElementById("img");
-                var newImage = document.getElementById("new_image");
-                newImage.style.width = oldImage.width + "px";
-                newImage.style.height = oldImage.height + "px";
+
+                for (var i = 0; i < data.length; i++) {
+
+                    var sp = document.createElement("span");
+                    sp.innerHTML = "";
+                    // alert(data[i].path)
+                    probabilities=data[i].probabilities;
+                    if (probabilities !=null){
+
+                        for (var j = 0; j < probabilities.length; j++) {
+                            sp.innerHTML +="可能是"+ probabilities[j].class_name+"，其概率为："+probabilities[j].scores.toFixed(2)+"%<br/>";
+                        }
+                    }else {
+                        sp.innerHTML="无检测结果"
+                    }
+                    var img = new Image();
+                    img.src = data[i].path;
+
+                    document.getElementById("right_image").appendChild(img);
+                    document.getElementById("right_image").appendChild(sp);
+
+
+                }
+
 
 
             }
